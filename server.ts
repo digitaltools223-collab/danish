@@ -4,8 +4,8 @@ import path from "path";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { createServer as createViteServer } from "vite";
-import { db } from "./server/db";
-import { User } from "./server/db";
+import { db } from "./server/db.js";
+import { User } from "./server/db.js";
 
 // Extend Express Request type to include user information
 declare global {
@@ -562,7 +562,11 @@ export default async function (req: Request, res: Response) {
     return app(req, res);
   } catch (err: any) {
     console.error("CRITICAL: Vercel Serverless Function Failed to Start:", err);
-    res.status(500).send(`Server Startup Error: ${err.message}\n\nPlease check your Vercel Environment Variables (DB_HOST, DB_USER, etc.)`);
+    res.status(500).json({ 
+      error: "Server Startup Error", 
+      message: err.message,
+      hint: "Check Vercel Environment Variables (DB_HOST, DB_USER, etc.)"
+    });
   }
 }
 
