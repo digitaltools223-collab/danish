@@ -67,6 +67,27 @@ async function startServer() {
 
   // --- API Routes ---
 
+  // Health check with detailed status
+  app.get("/api/health", async (req: Request, res: Response) => {
+    try {
+      console.log("Checking DB connection...");
+      const result = await pool.query("SELECT 1 as connected");
+      res.json({ 
+        status: "ok", 
+        database: "connected", 
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV
+      });
+    } catch (err: any) {
+      console.error("Health check DB error:", err.message);
+      res.status(500).json({ 
+        status: "error", 
+        database: "disconnected", 
+        message: err.message 
+      });
+    }
+  });
+
   // Auth Endpoint
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     const { email, password } = req.body;
@@ -522,7 +543,8 @@ async function startServer() {
     res.status(500).json({ error: err.message || "Internal Server Error" });
   });
 
-  if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+  // ONLY listen if not running in Vercel environment
+  if (!process.env.VERCEL) {
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on http://0.0.0.0:${PORT}`);
     });
@@ -534,7 +556,13 @@ async function startServer() {
 const appPromise = startServer();
 
 export default async function (req: Request, res: Response) {
-  const app = await appPromise;
-  return app(req, res);
+  try {
+    const app = await appPromise;
+    // Handle Vercel's request
+    return app(req, res);
+  } catch (err: any) {
+    console.error("CRITICAL: Vercel Serverless Function Failed to Start:", err);
+    res.status(500).send(`Server Startup Error: ${err.message}\n\nPlease check your Vercel Environment Variables (DB_HOST, DB_USER, etc.)`);
+  }
 }
 
