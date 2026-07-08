@@ -565,7 +565,7 @@ export default async function (req: Request, res: Response) {
     res.status(500).json({ 
       error: "Server Startup Error", 
       message: err.message,
-      hint: "Check Vercel Environment Variables (DB_HOST, DB_USER, etc.)"
+      hint: "Check if firebase-applet-config.json exists or check Firebase Environment Variables (FIREBASE_PROJECT_ID, etc.)"
     });
   }
 }
